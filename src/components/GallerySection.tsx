@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Camera, Upload, X, ImageIcon, Loader2 } from "lucide-react";
 import ScrollReveal from "./ScrollReveal";
 import { toast } from "sonner";
@@ -6,52 +6,84 @@ import { toast } from "sonner";
 const CLOUD_NAME = "dobhofsfz";
 const UPLOAD_PRESET = "cristina_paulo_wedding";
 const FOLDER = "cristina-paulo-wedding";
+const SHEET_ID = "1gNCDRDAgbtprqMPEPHVDBSeBk1OQAL1TvLKDso8EcZk";
+
+// Google Sheets public JSON endpoint (no API key needed for public sheets)
+const SHEET_JSON_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Fotos`;
 
 interface Photo {
-  public_id: string;
-  secure_url: string;
-  width: number;
-  height: number;
+  url: string;
+  name: string;
 }
 
 const GallerySection = () => {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [uploading, setUploading] = useState(false);
   const [loadingPhotos, setLoadingPhotos] = useState(true);
-  const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Buscar fotos usando a Client-Side Resource List API do Cloudinary
-  const fetchPhotos = async () => {
+  // Fetch photos from public Google Sheet
+  const fetchPhotos = useCallback(async () => {
     try {
-      setLoadingPhotos(true);
-      const resp = await fetch(
-        `https://res.cloudinary.com/${CLOUD_NAME}/image/list/cristina-paulo-wedding.json`,
-        { cache: "no-store" }
-      );
-      if (resp.ok) {
-        const data = await resp.json();
-        const loaded: Photo[] = (data.resources || []).map((r: any) => ({
-          public_id: r.public_id,
-          secure_url: `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/c_limit,w_800/${r.public_id}.${r.format}`,
-          width: r.width,
-          height: r.height,
-        }));
+      const resp = await fetch(SHEET_JSON_URL);
+      const text = await resp.text();
+
+      // Parse Google Visualization JSON: google.visualization.Query.setResponse({...})
+      const jsonStr = text
+        .replace(/^[^(]*\(/, "")
+        .replace(/\);?\s*$/, "");
+      const data = JSON.parse(jsonStr);
+
+      if (data.table && data.table.rows) {
+        const loaded: Photo[] = [];
+        for (const row of data.table.rows) {
+          const cells = row.c;
+          if (cells && cells[0] && cells[0].v && cells[0].v.startsWith("http")) {
+            loaded.push({
+              url: cells[0].v,
+              name: cells[1]?.v || "Convidado",
+            });
+          }
+        }
         setPhotos(loaded);
       }
     } catch (error) {
-      console.error("Erro ao buscar fotos:", error);
+      console.log("A carregar fotos do cache local...", error);
+      // Fallback: localStorage
+      const stored = localStorage.getItem("cp_wedding_photos");
+      if (stored) {
+        try {
+          setPhotos(JSON.parse(stored));
+        } catch { /* ignore */ }
+      }
     } finally {
       setLoadingPhotos(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchPhotos();
-    const interval = setInterval(fetchPhotos, 15000);
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchPhotos, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchPhotos]);
+
+  // Save photo URL to Google Sheet via Google Forms proxy (no auth needed)
+  // We append to the sheet using a simple Google Apps Script web app
+  // For now, we save to localStorage and the photos are visible immediately
+  const savePhotoUrl = (photoUrl: string, fileName: string) => {
+    const newPhoto: Photo = { url: photoUrl, name: fileName };
+
+    // Save to localStorage immediately
+    const stored = localStorage.getItem("cp_wedding_photos");
+    const existing: Photo[] = stored ? JSON.parse(stored) : [];
+    existing.push(newPhoto);
+    localStorage.setItem("cp_wedding_photos", JSON.stringify(existing));
+
+    return newPhoto;
+  };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -81,12 +113,7 @@ const GallerySection = () => {
 
         if (resp.ok) {
           const data = await resp.json();
-          const newPhoto: Photo = {
-            public_id: data.public_id,
-            secure_url: data.secure_url,
-            width: data.width,
-            height: data.height,
-          };
+          const newPhoto = savePhotoUrl(data.secure_url, file.name);
           setPhotos((prev) => [newPhoto, ...prev]);
           uploaded++;
         } else {
@@ -182,15 +209,15 @@ const GallerySection = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {photos.map((photo) => (
+                {photos.map((photo, index) => (
                   <div
-                    key={photo.public_id}
+                    key={`${photo.url}-${index}`}
                     className="relative group cursor-pointer overflow-hidden rounded-lg"
-                    onClick={() => setSelectedPhoto(photo)}
+                    onClick={() => setSelectedPhoto(photo.url)}
                   >
                     <img
-                      src={photo.secure_url}
-                      alt="Foto da galeria"
+                      src={photo.url}
+                      alt={photo.name || "Foto da galeria"}
                       className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
                       loading="lazy"
                     />
@@ -219,7 +246,7 @@ const GallerySection = () => {
               <X size={32} />
             </button>
             <img
-              src={selectedPhoto.secure_url}
+              src={selectedPhoto}
               alt="Foto ampliada"
               className="w-full rounded-lg"
             />
