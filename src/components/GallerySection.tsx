@@ -3,34 +3,45 @@ import { Camera, Upload, X, ImageIcon, Loader2 } from "lucide-react";
 import ScrollReveal from "./ScrollReveal";
 import { toast } from "sonner";
 
-interface CloudinaryPhoto {
+const CLOUD_NAME = "dobhofsfz";
+const UPLOAD_PRESET = "cristina_paulo_wedding";
+const FOLDER = "cristina-paulo-wedding";
+
+interface Photo {
   public_id: string;
   secure_url: string;
   width: number;
   height: number;
-  created_at: string;
 }
 
 const GallerySection = () => {
-  const [photos, setPhotos] = useState<CloudinaryPhoto[]>([]);
+  const [photos, setPhotos] = useState<Photo[]>([]);
   const [uploading, setUploading] = useState(false);
   const [loadingPhotos, setLoadingPhotos] = useState(true);
-  const [selectedPhoto, setSelectedPhoto] = useState<CloudinaryPhoto | null>(null);
+  const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Buscar fotos usando a Client-Side Resource List API do Cloudinary
   const fetchPhotos = async () => {
     try {
       setLoadingPhotos(true);
-      // Usar a Vercel Function para listar fotos
-      const response = await fetch("/api/photos", { cache: "no-store" });
-      if (response.ok) {
-        const data = await response.json();
-        setPhotos(data.photos || []);
+      const resp = await fetch(
+        `https://res.cloudinary.com/${CLOUD_NAME}/image/list/cristina-paulo-wedding.json`,
+        { cache: "no-store" }
+      );
+      if (resp.ok) {
+        const data = await resp.json();
+        const loaded: Photo[] = (data.resources || []).map((r: any) => ({
+          public_id: r.public_id,
+          secure_url: `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/c_limit,w_800/${r.public_id}.${r.format}`,
+          width: r.width,
+          height: r.height,
+        }));
+        setPhotos(loaded);
       }
     } catch (error) {
       console.error("Erro ao buscar fotos:", error);
-      toast.error("Erro ao carregar fotos");
     } finally {
       setLoadingPhotos(false);
     }
@@ -38,8 +49,7 @@ const GallerySection = () => {
 
   useEffect(() => {
     fetchPhotos();
-    // Atualizar a cada 10 segundos
-    const interval = setInterval(fetchPhotos, 10000);
+    const interval = setInterval(fetchPhotos, 15000);
     return () => clearInterval(interval);
   }, []);
 
@@ -52,7 +62,6 @@ const GallerySection = () => {
 
     let uploaded = 0;
     for (const file of files) {
-      // Verificar tamanho (máx 10MB)
       if (file.size > 10 * 1024 * 1024) {
         toast.error(`"${file.name}" é demasiado grande. Máximo 10MB.`);
         continue;
@@ -60,18 +69,29 @@ const GallerySection = () => {
 
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("upload_preset", UPLOAD_PRESET);
+      formData.append("folder", FOLDER);
+      formData.append("tags", "cristina-paulo-wedding");
 
       try {
-        const resp = await fetch("/api/upload", {
-          method: "POST",
-          body: formData,
-        });
+        const resp = await fetch(
+          `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+          { method: "POST", body: formData }
+        );
 
         if (resp.ok) {
           const data = await resp.json();
-          setPhotos((prev) => [data, ...prev]);
+          const newPhoto: Photo = {
+            public_id: data.public_id,
+            secure_url: data.secure_url,
+            width: data.width,
+            height: data.height,
+          };
+          setPhotos((prev) => [newPhoto, ...prev]);
           uploaded++;
         } else {
+          const errData = await resp.json().catch(() => ({}));
+          console.error("Erro Cloudinary:", errData);
           toast.error(`Erro ao carregar "${file.name}".`);
         }
       } catch (error) {
@@ -85,8 +105,8 @@ const GallerySection = () => {
     if (uploaded > 0) {
       toast.success(
         uploaded === 1
-          ? "Foto partilhada com sucesso! 📸"
-          : `${uploaded} fotos partilhadas com sucesso! 📸`
+          ? "Foto partilhada com sucesso!"
+          : `${uploaded} fotos partilhadas com sucesso!`
       );
     }
 
