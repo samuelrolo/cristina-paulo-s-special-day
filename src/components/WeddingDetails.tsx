@@ -5,18 +5,18 @@ const events = [
   {
     icon: Church,
     title: "Cerimónia",
-    time: "15:00",
-    location: "Mafra",
-    description: "Cerimónia religiosa num cenário histórico e deslumbrante.",
-    mapUrl: "https://www.google.com/maps/search/Mafra+Portugal",
+    time: "11:30",
+    location: "Igreja Paroquial de Santo Isidoro",
+    description: "Santo Isidoro — Mafra",
+    mapUrl: "https://www.google.com/maps/search/Igreja+Paroquial+de+Santo+Isidoro+Santo+Isidoro",
   },
   {
     icon: PartyPopper,
     title: "Festa",
-    time: "17:30",
+    time: "A seguir",
     location: "Quinta do Lumarinho",
-    description: "Cocktail, jantar e festa num ambiente encantador rodeado de natureza.",
-    mapUrl: "https://www.google.com/maps/search/Quinta+do+Lumarinho",
+    description: "Montelavar — Sintra",
+    mapUrl: "https://www.google.com/maps/search/Quinta+do+Lumarinho+Montelavar+Sintra",
   },
 ];
 
@@ -59,20 +59,6 @@ const WeddingDetails = () => {
           ))}
         </div>
 
-        <ScrollReveal delay={300}>
-          <div className="mt-12 p-6 border border-border rounded-sm">
-            <p className="wedding-subheading text-xs mb-3">Programa</p>
-            <div className="flex flex-wrap justify-center gap-x-8 gap-y-3 text-sm text-muted-foreground font-light">
-              <span>15:00 — Cerimónia</span>
-              <span className="text-gold">·</span>
-              <span>16:30 — Cocktail</span>
-              <span className="text-gold">·</span>
-              <span>18:30 — Jantar</span>
-              <span className="text-gold">·</span>
-              <span>21:00 — Festa & Dança</span>
-            </div>
-          </div>
-        </ScrollReveal>
       </div>
     </section>
   );

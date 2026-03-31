@@ -86,11 +86,11 @@ const OpeningAnimation = ({ onComplete }: OpeningAnimationProps) => {
       </div>
       
       <div className={`mt-8 text-center transition-all duration-700 ${phase >= 2 ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
-        <p className="wedding-subheading text-sm tracking-[0.3em] mb-3">Celebramos o nosso amor</p>
+        <p className="wedding-subheading text-sm tracking-[0.3em] mb-3">É com muita alegria que vos convidamos</p>
         <h1 className="font-serif text-5xl md:text-7xl font-light text-foreground">
           Cristina <span className="text-gold italic">&</span> Paulo
         </h1>
-        <p className="mt-4 text-muted-foreground font-light tracking-widest text-sm">07 · 07 · 2027</p>
+        <p className="mt-4 text-muted-foreground font-light tracking-widest text-sm">26 · 09 · 2026</p>
       </div>
     </div>
   );

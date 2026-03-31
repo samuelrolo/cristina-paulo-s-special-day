@@ -9,7 +9,7 @@ const Footer = () => {
         Cristina & Paulo
       </p>
       <p className="text-xs tracking-[0.3em] uppercase text-muted-foreground mb-6">
-        07 · 07 · 2027
+        26 · 09 · 2026
       </p>
       <div className="flex items-center justify-center gap-1 text-muted-foreground/50 text-xs">
         <span>Feito com</span>

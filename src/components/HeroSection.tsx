@@ -3,7 +3,7 @@ import CountdownTimer from "./CountdownTimer";
 import heroImage from "@/assets/hero-wedding.jpg";
 
 const HeroSection = () => {
-  const weddingDate = new Date("2027-07-07T15:00:00");
+  const weddingDate = new Date("2026-09-26T11:30:00");
 
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center px-4 overflow-hidden">
@@ -12,7 +12,7 @@ const HeroSection = () => {
         <img
           src={heroImage}
           alt="Arranjo floral elegante"
-          className="w-full h-full object-cover opacity-20"
+          className="w-full h-full object-cover opacity-15"
           loading="eager"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/40 to-background" />
@@ -24,7 +24,7 @@ const HeroSection = () => {
         </div>
 
         <div className="fade-in-section fade-in-delay-2">
-          <p className="wedding-subheading text-xs md:text-sm mb-4">Temos o prazer de vos convidar</p>
+          <p className="wedding-subheading text-xs md:text-sm mb-4">É com muita alegria que vos convidamos<br />para o nosso casamento</p>
           <h1 className="font-serif text-6xl md:text-8xl lg:text-9xl font-light text-foreground leading-none">
             Cristina
           </h1>
@@ -36,8 +36,8 @@ const HeroSection = () => {
 
         <div className="fade-in-section fade-in-delay-3">
           <div className="wedding-divider mt-10" />
-          <p className="wedding-subheading text-xs md:text-sm mt-6">7 de Julho de 2027</p>
-          <p className="text-muted-foreground font-light mt-2 text-sm">Mafra, Portugal</p>
+          <p className="wedding-subheading text-xs md:text-sm mt-6">26 de Setembro de 2026</p>
+
         </div>
 
         <div className="fade-in-section fade-in-delay-4 mt-12 md:mt-16">

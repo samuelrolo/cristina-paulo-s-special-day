@@ -8,10 +8,6 @@ const faqs = [
     answer: "Sim, as crianças são bem-vindas! Teremos um espaço dedicado para os mais pequenos durante a festa.",
   },
   {
-    question: "Qual é o dress code?",
-    answer: "O dress code é formal elegante. Sugerimos tons neutros e elegantes — evitem branco, por favor! 😊",
-  },
-  {
     question: "Existe estacionamento no local?",
     answer: "Sim, tanto a cerimónia como a Quinta do Lumarinho dispõem de estacionamento gratuito para os convidados.",
   },
@@ -21,7 +17,7 @@ const faqs = [
   },
   {
     question: "Há alojamento próximo?",
-    answer: "Sim! Recomendamos o Hotel & Spa na região de Mafra. Temos um código de desconto especial — contactem-nos para mais informações.",
+    answer: "Sim! Há alojamento na região de Mafra e Sintra. Contactem-nos para mais informações.",
   },
   {
     question: "A que horas termina a festa?",
@@ -29,11 +25,7 @@ const faqs = [
   },
   {
     question: "Como chego ao local da cerimónia?",
-    answer: "A cerimónia será em Mafra. Podem utilizar os links do Google Maps disponíveis na secção de detalhes acima para obter direções.",
-  },
-  {
-    question: "Posso levar acompanhante?",
-    answer: "Os convites são pessoais. Se tiver dúvidas, por favor contactem-nos diretamente.",
+    answer: "A cerimónia será na Igreja Paroquial de Santo Isidoro, em Mafra. A festa será na Quinta do Lumarinho, em Montelavar — Sintra. Podem utilizar os links do Google Maps disponíveis na secção de detalhes acima.",
   },
 ];
 
