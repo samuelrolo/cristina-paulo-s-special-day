@@ -6,10 +6,13 @@ import { toast } from "sonner";
 const CLOUD_NAME = "dobhofsfz";
 const UPLOAD_PRESET = "cristina_paulo_wedding";
 const FOLDER = "cristina-paulo-wedding";
+const SHEET_ID = "1gNCDRDAgbtprqMPEPHVDBSeBk1OQAL1TvLKDso8EcZk";
+
+// Google Sheets public JSON endpoint (no API key needed for public sheets)
+const SHEET_JSON_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Fotos`;
 
 interface Photo {
   url: string;
-  urlFull?: string;
   name: string;
 }
 
@@ -21,30 +24,16 @@ const GallerySection = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch photos from Vercel API route (which calls Cloudinary Admin API)
+  // Fetch photos from public Google Sheet
   const fetchPhotos = useCallback(async () => {
     try {
-      const resp = await fetch("/api/photos");
-      if (resp.ok) {
-        const data = await resp.json();
-        if (data.photos && data.photos.length > 0) {
-          setPhotos(data.photos);
-          // Cache in localStorage as fallback
-          localStorage.setItem("cp_wedding_photos", JSON.stringify(data.photos));
-          return;
-        }
-      }
-    } catch (error) {
-      console.log("API route failed, trying fallback...", error);
-    }
-
-    // Fallback: try Google Sheet public endpoint
-    try {
-      const SHEET_ID = "1gNCDRDAgbtprqMPEPHVDBSeBk1OQAL1TvLKDso8EcZk";
-      const SHEET_JSON_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Fotos`;
       const resp = await fetch(SHEET_JSON_URL);
       const text = await resp.text();
-      const jsonStr = text.replace(/^[^(]*\(/, "").replace(/\);?\s*$/, "");
+
+      // Parse Google Visualization JSON: google.visualization.Query.setResponse({...})
+      const jsonStr = text
+        .replace(/^[^(]*\(/, "")
+        .replace(/\);?\s*$/, "");
       const data = JSON.parse(jsonStr);
 
       if (data.table && data.table.rows) {
@@ -54,36 +43,47 @@ const GallerySection = () => {
           if (cells && cells[0] && cells[0].v && cells[0].v.startsWith("http")) {
             loaded.push({
               url: cells[0].v,
-              urlFull: cells[0].v,
               name: cells[1]?.v || "Convidado",
             });
           }
         }
-        if (loaded.length > 0) {
-          setPhotos(loaded);
-          localStorage.setItem("cp_wedding_photos", JSON.stringify(loaded));
-          return;
-        }
+        setPhotos(loaded);
       }
     } catch (error) {
-      console.log("Google Sheet fallback failed...", error);
-    }
-
-    // Final fallback: localStorage
-    const stored = localStorage.getItem("cp_wedding_photos");
-    if (stored) {
-      try {
-        setPhotos(JSON.parse(stored));
-      } catch { /* ignore */ }
+      console.log("A carregar fotos do cache local...", error);
+      // Fallback: localStorage
+      const stored = localStorage.getItem("cp_wedding_photos");
+      if (stored) {
+        try {
+          setPhotos(JSON.parse(stored));
+        } catch { /* ignore */ }
+      }
+    } finally {
+      setLoadingPhotos(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchPhotos().finally(() => setLoadingPhotos(false));
+    fetchPhotos();
     // Refresh every 30 seconds
     const interval = setInterval(fetchPhotos, 30000);
     return () => clearInterval(interval);
   }, [fetchPhotos]);
+
+  // Save photo URL to Google Sheet via Google Forms proxy (no auth needed)
+  // We append to the sheet using a simple Google Apps Script web app
+  // For now, we save to localStorage and the photos are visible immediately
+  const savePhotoUrl = (photoUrl: string, fileName: string) => {
+    const newPhoto: Photo = { url: photoUrl, name: fileName };
+
+    // Save to localStorage immediately
+    const stored = localStorage.getItem("cp_wedding_photos");
+    const existing: Photo[] = stored ? JSON.parse(stored) : [];
+    existing.push(newPhoto);
+    localStorage.setItem("cp_wedding_photos", JSON.stringify(existing));
+
+    return newPhoto;
+  };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -113,24 +113,8 @@ const GallerySection = () => {
 
         if (resp.ok) {
           const data = await resp.json();
-          // Build optimized URL using Cloudinary transformations
-          const optimizedUrl = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/f_auto,q_auto,w_800/${data.public_id}`;
-          const fullUrl = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/f_auto,q_auto/${data.public_id}`;
-          
-          const newPhoto: Photo = {
-            url: optimizedUrl,
-            urlFull: fullUrl,
-            name: file.name,
-          };
-          
+          const newPhoto = savePhotoUrl(data.secure_url, file.name);
           setPhotos((prev) => [newPhoto, ...prev]);
-          
-          // Update localStorage cache
-          const stored = localStorage.getItem("cp_wedding_photos");
-          const existing: Photo[] = stored ? JSON.parse(stored) : [];
-          existing.unshift(newPhoto);
-          localStorage.setItem("cp_wedding_photos", JSON.stringify(existing));
-          
           uploaded++;
         } else {
           const errData = await resp.json().catch(() => ({}));
@@ -229,7 +213,7 @@ const GallerySection = () => {
                   <div
                     key={`${photo.url}-${index}`}
                     className="relative group cursor-pointer overflow-hidden rounded-lg"
-                    onClick={() => setSelectedPhoto(photo.urlFull || photo.url)}
+                    onClick={() => setSelectedPhoto(photo.url)}
                   >
                     <img
                       src={photo.url}
