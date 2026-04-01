@@ -9,8 +9,13 @@ export default async function handler(req, res) {
   const TAG = "cristina-paulo-wedding";
 
   try {
-    const url = `https://${API_KEY}:${API_SECRET}@api.cloudinary.com/v1_1/${CLOUD_NAME}/resources/image/tags/${TAG}?max_results=100`;
-    const response = await fetch(url);
+    const credentials = Buffer.from(`${API_KEY}:${API_SECRET}`).toString("base64");
+    const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/resources/image/tags/${TAG}?max_results=100`;
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Basic ${credentials}`,
+      },
+    });
     const data = await response.json();
 
     const photos = (data.resources || []).map((r) => ({
