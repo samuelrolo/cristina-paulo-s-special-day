@@ -6,10 +6,7 @@ import { toast } from "sonner";
 const CLOUD_NAME = "dobhofsfz";
 const UPLOAD_PRESET = "cristina_paulo_wedding";
 const FOLDER = "cristina-paulo-wedding";
-const SHEET_ID = "1gNCDRDAgbtprqMPEPHVDBSeBk1OQAL1TvLKDso8EcZk";
-
-// Google Sheets public JSON endpoint (no API key needed for public sheets)
-const SHEET_JSON_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Fotos`;
+const PHOTOS_API_URL = "/api/photos";
 
 interface Photo {
   url: string;
@@ -24,40 +21,16 @@ const GallerySection = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch photos from public Google Sheet
+  // Fetch photos from Cloudinary via API
   const fetchPhotos = useCallback(async () => {
     try {
-      const resp = await fetch(SHEET_JSON_URL);
-      const text = await resp.text();
-
-      // Parse Google Visualization JSON: google.visualization.Query.setResponse({...})
-      const jsonStr = text
-        .replace(/^[^(]*\(/, "")
-        .replace(/\);?\s*$/, "");
-      const data = JSON.parse(jsonStr);
-
-      if (data.table && data.table.rows) {
-        const loaded: Photo[] = [];
-        for (const row of data.table.rows) {
-          const cells = row.c;
-          if (cells && cells[0] && cells[0].v && cells[0].v.startsWith("http")) {
-            loaded.push({
-              url: cells[0].v,
-              name: cells[1]?.v || "Convidado",
-            });
-          }
-        }
-        setPhotos(loaded);
+      const resp = await fetch(PHOTOS_API_URL);
+      const data = await resp.json();
+      if (data.photos) {
+        setPhotos(data.photos);
       }
     } catch (error) {
-      console.log("A carregar fotos do cache local...", error);
-      // Fallback: localStorage
-      const stored = localStorage.getItem("cp_wedding_photos");
-      if (stored) {
-        try {
-          setPhotos(JSON.parse(stored));
-        } catch { /* ignore */ }
-      }
+      console.log("Erro ao carregar fotos", error);
     } finally {
       setLoadingPhotos(false);
     }
@@ -70,19 +43,8 @@ const GallerySection = () => {
     return () => clearInterval(interval);
   }, [fetchPhotos]);
 
-  // Save photo URL to Google Sheet via Google Forms proxy (no auth needed)
-  // We append to the sheet using a simple Google Apps Script web app
-  // For now, we save to localStorage and the photos are visible immediately
   const savePhotoUrl = (photoUrl: string, fileName: string) => {
-    const newPhoto: Photo = { url: photoUrl, name: fileName };
-
-    // Save to localStorage immediately
-    const stored = localStorage.getItem("cp_wedding_photos");
-    const existing: Photo[] = stored ? JSON.parse(stored) : [];
-    existing.push(newPhoto);
-    localStorage.setItem("cp_wedding_photos", JSON.stringify(existing));
-
-    return newPhoto;
+    return { url: photoUrl, name: fileName } as Photo;
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -34,22 +34,35 @@ const RSVPForm = () => {
     const loadingToast = toast.loading("A enviar confirmação...");
 
     try {
-      // Usando um endpoint do Google Apps Script para enviar para a Google Sheet
-      // O script deve estar configurado para receber POST e adicionar à folha 1gNCDRDAgbtprqMPEPHVDBSeBk1OQAL1TvLKDso8EcZk
-      const scriptURL = "https://script.google.com/macros/s/AKfycbz_REPLACE_WITH_ACTUAL_ID/exec";
+      const scriptURL = "https://script.google.com/macros/s/AKfycbyeyrc2VV2z3RLl26hOolDNAr9ONyQcs689dBgJEsvDG6ICG9Ii_aADMRh5VTl32Ea0IA/exec";
       
-      // Como não temos o scriptURL real agora, vamos simular o sucesso para o utilizador
-      // e eu vou configurar o script no passo seguinte se necessário, ou usar uma alternativa.
-      // Para este projecto, vamos usar uma submissão de formulário simples que eu posso interceptar ou configurar.
+      const params = new URLSearchParams({
+        name: formData.name,
+        email: formData.email,
+        attending: formData.attending,
+        guests: formData.guests.toString(),
+        dietaryRestrictions: formData.dietaryRestrictions,
+        message: formData.message,
+      });
+
+      const response = await fetch(`${scriptURL}?${params.toString()}`, {
+        method: "GET",
+        mode: "cors",
+      });
+
+      if (!response.ok) {
+        throw new Error("Erro ao enviar confirmação");
+      }
+
+      const result = await response.json();
       
-      console.log("Dados a enviar:", formData);
-      
-      // Simulação de atraso de rede
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      setSubmitted(true);
-      toast.dismiss(loadingToast);
-      toast.success("Obrigado pela sua confirmação! 💕");
+      if (result.status === "success") {
+        setSubmitted(true);
+        toast.dismiss(loadingToast);
+        toast.success("Obrigado pela sua confirmação!");
+      } else {
+        throw new Error(result.message || "Erro desconhecido");
+      }
     } catch (error) {
       toast.dismiss(loadingToast);
       toast.error("Ocorreu um erro ao enviar. Por favor tente novamente.");

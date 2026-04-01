@@ -21,7 +21,7 @@ const faqs = [
   },
   {
     question: "A que horas termina a festa?",
-    answer: "A festa está prevista terminar por volta das 3:00 da manhã. Dancem até não poder mais! 💃🕺",
+    answer: "A festa está prevista terminar por volta das 2:00 da manhã. Dancem até não poder mais! 💃🕺",
   },
   {
     question: "Como chego ao local da cerimónia?",
